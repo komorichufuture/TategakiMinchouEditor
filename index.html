@@ -38,6 +38,19 @@
             justify-content: center;
             position: relative;
         }
+
+        .grid-link {
+            text-decoration: none;
+            color: inherit;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .grid-link:hover {
+            text-decoration: underline;
+        }
         
         .vertical-text {
             writing-mode: vertical-rl;
@@ -115,7 +128,7 @@
     <div class="container">
         <div class="grid-row" style="grid-template-columns: repeat(1, 1fr);">
             <div class="grid-item ripple" style="aspect-ratio: 2/1; border: 0px solid #000000;">
-                <div class=" vertical-text mincho" style="color: #333; font-size: 122px;">滄溟</div>
+                <div class=" vertical-text mincho" style="color: #333; font-size: 17px;">大きなテキスト</div>
             </div>
         </div>
         <div class="grid-row" style="grid-template-columns: repeat(2, 1fr);">
@@ -123,7 +136,7 @@
                 <div class=" vertical-text gothic" style="color: #333; font-size: 24px;">左側のテキスト</div>
             </div>
             <div class="grid-item ripple" style="aspect-ratio: 1/1; border: 0px solid #000000;">
-                <div class=" horizontal-text gothic" style="color: #333; font-size: 24px;">右側のテキスト</div>
+                <div class=" vertical-text gothic" style="color: #333; font-size: 24px;">右側のテキスト</div>
             </div>
         </div>
     </div>
