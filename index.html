@@ -260,12 +260,20 @@
 
         .overlay-text {
             position: absolute;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            inset: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 12px;
             z-index: 3;
             pointer-events: none;
             text-shadow: 0 1px 2px rgba(255,255,255,0.4);
+            writing-mode: horizontal-tb; /* 座標系を固定（縦書きでも位置がズレない） */
         }
+
+        .overlay-top { align-items: flex-start; }
+        .overlay-center { align-items: center; }
+        .overlay-bottom { align-items: flex-end; }
 .vertical-text {
             writing-mode: vertical-rl;
             font-size: 24px;
@@ -673,14 +681,14 @@
 
                     const justifyMap = { top: 'flex-start', center: 'center', bottom: 'flex-end' };
                     const justify = justifyMap[item.textPosition] || 'center';
-                    const topMap = { top: '15%', center: '50%', bottom: '85%' };
-                    const overlayTop = topMap[item.textPosition] || '50%';
 
                     const safeText = (item.text ?? '').toString();
                     const safeImg = (item.imageUrl ?? '').toString();
-                    const overlayStyle = item.overlay ? (' top:' + overlayTop + ';') : '';
 
-                    const textHtml = `<div class="${textClass} ${fontClass}${item.overlay ? ' overlay-text' : ''}" style="color: ${item.color}; font-size: ${item.fontSize}px;${overlayStyle}">${safeText}</div>`;
+                    const textInner = `<div class="${textClass} ${fontClass}" style="color: ${item.color}; font-size: ${item.fontSize}px;">${safeText}</div>`;
+                    const overlayPos = item.textPosition || 'center';
+                    const overlayBox = `<div class="overlay-text overlay-${overlayPos}">${textInner}</div>`;
+                    const textHtml = item.overlay ? overlayBox : textInner;
 
                     let content = '';
                     if (item.type === 'image') {
@@ -890,12 +898,20 @@
 
         .overlay-text {
             position: absolute;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            inset: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 12px;
             z-index: 3;
             pointer-events: none;
             text-shadow: 0 1px 2px rgba(255,255,255,0.4);
+            writing-mode: horizontal-tb; /* 座標系を固定（縦書きでも位置がズレない） */
         }
+
+        .overlay-top { align-items: flex-start; }
+        .overlay-center { align-items: center; }
+        .overlay-bottom { align-items: flex-end; }
 
         
         .vertical-text {
@@ -983,14 +999,14 @@
 
                     const justifyMap = { top: 'flex-start', center: 'center', bottom: 'flex-end' };
                     const justify = justifyMap[item.textPosition] || 'center';
-                    const topMap = { top: '15%', center: '50%', bottom: '85%' };
-                    const overlayTop = topMap[item.textPosition] || '50%';
 
                     const safeText = (item.text ?? '').toString();
                     const safeImg = (item.imageUrl ?? '').toString();
-                    const overlayStyle = item.overlay ? (' top:' + overlayTop + ';') : '';
 
-                    const textHtml = `<div class="${textClass}${fontClass}${item.overlay ? ' overlay-text' : ''}" style="color: ${item.color}; font-size: ${item.fontSize}px;${overlayStyle}">${safeText}</div>`;
+                    const textInner = `<div class="${textClass}${fontClass}" style="color: ${item.color}; font-size: ${item.fontSize}px;">${safeText}</div>`;
+                    const overlayPos = item.textPosition || 'center';
+                    const overlayBox = `<div class="overlay-text overlay-${overlayPos}">${textInner}</div>`;
+                    const textHtml = item.overlay ? overlayBox : textInner;
 
                     let content = '';
                     if (item.type === 'image') {
@@ -1136,7 +1152,13 @@
                     let type = 'text';
                     if (imageUrl && text) type = 'both';
                     else if (imageUrl) type = 'image';
-                    const textPosition = 'center';
+                    let textPosition = 'center';
+                    const overlayBox = item.querySelector('.overlay-text');
+                    if (overlayBox) {
+                        if (overlayBox.classList.contains('overlay-top')) textPosition = 'top';
+                        else if (overlayBox.classList.contains('overlay-bottom')) textPosition = 'bottom';
+                        else if (overlayBox.classList.contains('overlay-center')) textPosition = 'center';
+                    }
 
                     
                     rowData.items.push({
