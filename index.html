@@ -3,6 +3,804 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>縦書きグリッドエディタ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .editor-container {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            height: 100vh;
+        }
+        
+        /* 左側: コントロールパネル */
+        .control-panel {
+            background: #252525;
+            border-right: 1px solid #333;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .control-panel h1 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #4a9eff;
+        }
+        
+        .section {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #333;
+        }
+        
+        .section h2 {
+            font-size: 14px;
+            margin-bottom: 15px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        .control-group label {
+            display: block;
+            font-size: 13px;
+            margin-bottom: 5px;
+            color: #aaa;
+        }
+        
+        .control-group input[type="text"],
+        .control-group input[type="number"],
+        .control-group input[type="color"],
+        .control-group select,
+        .control-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 13px;
+        }
+        
+        .control-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        
+        .control-group input[type="range"] {
+            width: 100%;
+        }
+        
+        .btn {
+            padding: 10px 15px;
+            background: #4a9eff;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            font-size: 13px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            background: #3a8eef;
+        }
+        
+        .btn-secondary {
+            background: #555;
+        }
+        
+        .btn-secondary:hover {
+            background: #666;
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
+        /* 右側: プレビューエリア */
+        .preview-area {
+            background: #f5f5f5;
+            overflow-y: auto;
+            padding: 40px;
+        }
+        
+        .preview-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        /* グリッドアイテムのコントロール */
+        .grid-item-control {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        
+        .grid-item-control h3 {
+            font-size: 14px;
+            margin-bottom: 12px;
+            color: #4a9eff;
+        }
+        
+        .row-controls {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .row-controls .btn {
+            flex: 1;
+            margin-top: 0;
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+        
+        .color-input-group {
+            display: grid;
+            grid-template-columns: 50px 1fr;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        input[type="color"] {
+            height: 35px;
+            cursor: pointer;
+        }
+        
+        .range-value {
+            display: inline-block;
+            margin-left: 10px;
+            color: #4a9eff;
+            font-weight: 600;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+        
+        /* プレビューのスタイル */
+        .grid-row {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .grid-item {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .grid-link {
+            text-decoration: none;
+            color: inherit;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .grid-link:hover {
+            text-decoration: underline;
+        }
+        
+        
+
+        .grid-image {
+            max-width: 100%;
+            max-height: 100%;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+            position: relative;
+            z-index: 2;
+        }
+
+        .grid-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .grid-both {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .overlay-wrap {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: stretch;
+            justify-content: stretch;
+        }
+
+        .overlay-text {
+            position: absolute;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 3;
+            pointer-events: none;
+            text-shadow: 0 1px 2px rgba(255,255,255,0.4);
+        }
+.vertical-text {
+            writing-mode: vertical-rl;
+            font-size: 24px;
+            font-weight: 500;
+            color: #333;
+            letter-spacing: 0.1em;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .horizontal-text {
+            writing-mode: horizontal-tb;
+            font-size: 24px;
+            font-weight: 500;
+            color: #333;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .mincho {
+            font-family: "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", "MS Mincho", serif;
+        }
+        
+        .gothic {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+        }
+        
+        .ripple {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .ripple::before,
+        .ripple::after {
+            content: '';
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: transparent;
+            border: 1px solid rgba(0, 0, 0, 0.6);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: ripple-animation 2.5s ease-out forwards;
+            z-index: 1;
+        }
+        
+        .ripple::after {
+            animation-delay: 0.5s;
+        }
+        
+        @keyframes ripple-animation {
+            0% {
+                width: 40px;
+                height: 40px;
+                opacity: 0.8;
+            }
+            100% {
+                width: 1500px;
+                height: 1500px;
+                opacity: 0;
+            }
+        }
+        
+        /* エクスポートモーダル */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: #252525;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-content h2 {
+            margin-bottom: 20px;
+            color: #4a9eff;
+        }
+        
+        .modal-content textarea {
+            width: 100%;
+            height: 400px;
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: #fff;
+            font-family: monospace;
+            font-size: 12px;
+            padding: 15px;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="editor-container">
+        <!-- 左側: コントロールパネル -->
+        <div class="control-panel">
+            <h1>📝 縦書きグリッドエディタ</h1>
+            
+            <!-- グローバル設定 -->
+            <div class="section">
+                <h2>グローバル設定</h2>
+                <div class="control-group">
+                    <label>背景色</label>
+                    <div class="color-input-group">
+                        <input type="color" id="bg-color" value="#f5f5f5">
+                        <input type="text" id="bg-color-text" value="#f5f5f5">
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>最大幅 (px)</label>
+                    <input type="number" id="max-width" value="1200" min="600" max="2000">
+                </div>
+            </div>
+            
+            <!-- グリッド行の管理 -->
+            <div class="section">
+                <h2>グリッド行</h2>
+                <div id="rows-container"></div>
+                <button class="btn" onclick="addRow()">+ 新しい行を追加</button>
+            </div>
+            
+            <!-- エクスポート -->
+            <div class="section">
+                <h2>エクスポート</h2>
+                <button class="btn" onclick="exportHTML()">HTMLを出力</button>
+                <button class="btn btn-secondary" onclick="loadTemplate()">テンプレート読込</button>
+            </div>
+        </div>
+        
+        <!-- 右側: プレビューエリア -->
+        <div class="preview-area">
+            <div class="preview-container" id="preview"></div>
+        </div>
+    </div>
+    
+    <!-- エクスポートモーダル -->
+    <div class="modal" id="export-modal">
+        <div class="modal-content">
+            <h2>HTML出力</h2>
+            <textarea id="export-code" readonly></textarea>
+            <div class="modal-actions">
+                <button class="btn" onclick="copyHTML()">コピー</button>
+                <button class="btn" onclick="downloadHTML()">ダウンロード</button>
+                <button class="btn btn-secondary" onclick="closeModal()">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // データ構造
+        let gridData = {
+            bgColor: '#f5f5f5',
+            maxWidth: 1200,
+            rows: [
+                {
+                    id: 1,
+                    columns: 1,
+                    items: [
+                        {
+                            type: 'text',
+                            imageUrl: '',
+                            textPosition: 'center',
+                            overlay: false,
+                            text: '大きなテキスト',
+                            aspectRatio: '2/1',
+                            hasRipple: true,
+                            color: '#333',
+                            fontSize: 24,
+                            fontFamily: 'gothic',
+                            isHorizontal: false,
+                            borderWidth: 0,
+                            borderColor: '#000000',
+                            link: '',
+                            newTab: true
+                                                }
+                    ]
+                },
+                {
+                    id: 2,
+                    columns: 2,
+                    items: [
+                        {
+                            type: 'text',
+                            imageUrl: '',
+                            textPosition: 'center',
+                            overlay: false,
+                            text: '左側のテキスト',
+                            aspectRatio: '1/1',
+                            hasRipple: true,
+                            color: '#333',
+                            fontSize: 24,
+                            fontFamily: 'gothic',
+                            isHorizontal: false,
+                            borderWidth: 0,
+                            borderColor: '#000000',
+                            link: '',
+                            newTab: true
+                                                },
+                        {
+                            type: 'text',
+                            imageUrl: '',
+                            textPosition: 'center',
+                            overlay: false,
+                            text: '右側のテキスト',
+                            aspectRatio: '1/1',
+                            hasRipple: true,
+                            color: '#333',
+                            fontSize: 24,
+                            fontFamily: 'gothic',
+                            isHorizontal: false,
+                            borderWidth: 0,
+                            borderColor: '#000000',
+                            link: '',
+                            newTab: true
+                                                }
+                    ]
+                }
+            ]
+        };
+        
+        let nextRowId = 3;
+        
+        // 初期化
+        function init() {
+            document.getElementById('bg-color').addEventListener('input', (e) => {
+                gridData.bgColor = e.target.value;
+                document.getElementById('bg-color-text').value = e.target.value;
+                updatePreview();
+            });
+            
+            document.getElementById('bg-color-text').addEventListener('input', (e) => {
+                gridData.bgColor = e.target.value;
+                document.getElementById('bg-color').value = e.target.value;
+                updatePreview();
+            });
+            
+            document.getElementById('max-width').addEventListener('input', (e) => {
+                gridData.maxWidth = e.target.value;
+                updatePreview();
+            });
+            
+            renderControls();
+            updatePreview();
+        }
+        
+        // コントロールをレンダリング
+        function renderControls() {
+            const container = document.getElementById('rows-container');
+            container.innerHTML = '';
+            
+            gridData.rows.forEach((row, rowIndex) => {
+                const rowControl = document.createElement('div');
+                rowControl.className = 'grid-item-control';
+                
+                let itemsHTML = '';
+                row.items.forEach((item, itemIndex) => {
+                    itemsHTML += `
+                        <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #444;">
+                            <div class="control-group">
+                                <label>アイテム ${itemIndex + 1} - 表示タイプ</label>
+                                <select onchange="updateItem(${rowIndex}, ${itemIndex}, 'type', this.value)">
+                                    <option value="text" ${item.type === 'text' ? 'selected' : ''}>テキスト</option>
+                                    <option value="image" ${item.type === 'image' ? 'selected' : ''}>画像</option>
+                                    <option value="both" ${item.type === 'both' ? 'selected' : ''}>画像＋テキスト</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <label>画像URL</label>
+                                <input type="text" placeholder="https://example.com/image.jpg" value="${item.imageUrl || ''}" onchange="updateItem(${rowIndex}, ${itemIndex}, 'imageUrl', this.value)">
+                            </div>
+                            <div class="control-group">
+                                <label>テキスト位置（中央 / 上 / 下）</label>
+                                <select onchange="updateItem(${rowIndex}, ${itemIndex}, 'textPosition', this.value)">
+                                    <option value="center" ${item.textPosition === 'center' ? 'selected' : ''}>中央</option>
+                                    <option value="top" ${item.textPosition === 'top' ? 'selected' : ''}>上</option>
+                                    <option value="bottom" ${item.textPosition === 'bottom' ? 'selected' : ''}>下</option>
+                                </select>
+                            </div>
+                            <div class="control-group checkbox-group">
+                                <input type="checkbox" id="overlay-${rowIndex}-${itemIndex}" ${item.overlay ? 'checked' : ''} onchange="updateItem(${rowIndex}, ${itemIndex}, 'overlay', this.checked)">
+                                <label for="overlay-${rowIndex}-${itemIndex}">オーバーレイ文字（画像の上に重ねる）</label>
+                            </div>
+
+                            <div class="control-group">
+                                <label>アイテム ${itemIndex + 1} - テキスト</label>
+                                <textarea onchange="updateItem(${rowIndex}, ${itemIndex}, 'text', this.value)">${item.text}</textarea>
+                            </div>
+                            <div class="control-group">
+                                <label>リンクURL（空ならリンク無し）</label>
+                                <input type="text" placeholder="https://example.com" value="${item.link || ''}" onchange="updateItem(${rowIndex}, ${itemIndex}, 'link', this.value)">
+                            </div>
+                            <div class="control-group checkbox-group">
+                                <input type="checkbox" id="newtab-${rowIndex}-${itemIndex}" ${item.newTab !== false ? 'checked' : ''} onchange="updateItem(${rowIndex}, ${itemIndex}, 'newTab', this.checked)">
+                                <label for="newtab-${rowIndex}-${itemIndex}">新しいタブで開く</label>
+                            </div>
+
+                            <div class="control-group">
+                                <label>アスペクト比</label>
+                                <select onchange="updateItem(${rowIndex}, ${itemIndex}, 'aspectRatio', this.value)">
+                                    <option value="1/1" ${item.aspectRatio === '1/1' ? 'selected' : ''}>1:1 (正方形)</option>
+                                    <option value="2/1" ${item.aspectRatio === '2/1' ? 'selected' : ''}>2:1 (横長)</option>
+                                    <option value="3/2" ${item.aspectRatio === '3/2' ? 'selected' : ''}>3:2</option>
+                                    <option value="4/3" ${item.aspectRatio === '4/3' ? 'selected' : ''}>4:3</option>
+                                    <option value="16/9" ${item.aspectRatio === '16/9' ? 'selected' : ''}>16:9</option>
+                                    <option value="1/2" ${item.aspectRatio === '1/2' ? 'selected' : ''}>1:2 (縦長)</option>
+                                    <option value="4/1" ${item.aspectRatio === '4/1' ? 'selected' : ''}>4:1 (超横長)</option>
+                                </select>
+                            </div>
+                            <div class="control-group checkbox-group">
+                                <input type="checkbox" id="horizontal-${rowIndex}-${itemIndex}" ${item.isHorizontal ? 'checked' : ''} onchange="updateItem(${rowIndex}, ${itemIndex}, 'isHorizontal', this.checked)">
+                                <label for="horizontal-${rowIndex}-${itemIndex}">横書き</label>
+                            </div>
+                            <div class="control-group">
+                                <label>フォント</label>
+                                <select onchange="updateItem(${rowIndex}, ${itemIndex}, 'fontFamily', this.value)">
+                                    <option value="gothic" ${item.fontFamily === 'gothic' ? 'selected' : ''}>ゴシック体</option>
+                                    <option value="mincho" ${item.fontFamily === 'mincho' ? 'selected' : ''}>明朝体</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <label>文字色</label>
+                                <div class="color-input-group">
+                                    <input type="color" value="${item.color}" onchange="updateItem(${rowIndex}, ${itemIndex}, 'color', this.value)">
+                                    <input type="text" value="${item.color}" onchange="updateItem(${rowIndex}, ${itemIndex}, 'color', this.value)">
+                                </div>
+                            </div>
+                            <div class="control-group">
+                                <label>フォントサイズ <span class="range-value">${item.fontSize}px</span></label>
+                                <input type="range" min="12" max="160" value="${item.fontSize}" oninput="updateItem(${rowIndex}, ${itemIndex}, 'fontSize', this.value); this.previousElementSibling.querySelector('.range-value').textContent = this.value + 'px'">
+                            </div>
+                            <div class="control-group">
+                                <label>ボーダー幅 <span class="range-value">${item.borderWidth}px</span></label>
+                                <input type="range" min="0" max="10" value="${item.borderWidth}" oninput="updateItem(${rowIndex}, ${itemIndex}, 'borderWidth', this.value); this.previousElementSibling.querySelector('.range-value').textContent = this.value + 'px'">
+                            </div>
+                            <div class="control-group">
+                                <label>ボーダー色</label>
+                                <div class="color-input-group">
+                                    <input type="color" value="${item.borderColor}" onchange="updateItem(${rowIndex}, ${itemIndex}, 'borderColor', this.value)">
+                                    <input type="text" value="${item.borderColor}" onchange="updateItem(${rowIndex}, ${itemIndex}, 'borderColor', this.value)">
+                                </div>
+                            </div>
+                            <div class="control-group checkbox-group">
+                                <input type="checkbox" id="ripple-${rowIndex}-${itemIndex}" ${item.hasRipple ? 'checked' : ''} onchange="updateItem(${rowIndex}, ${itemIndex}, 'hasRipple', this.checked)">
+                                <label for="ripple-${rowIndex}-${itemIndex}">波紋エフェクト</label>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                rowControl.innerHTML = `
+                    <h3>行 ${rowIndex + 1}</h3>
+                    <div class="control-group">
+                        <label>カラム数</label>
+                        <input type="number" min="1" max="4" value="${row.columns}" onchange="updateColumns(${rowIndex}, this.value)">
+                    </div>
+                    ${itemsHTML}
+                    <div class="row-controls">
+                        <button class="btn btn-danger" onclick="deleteRow(${rowIndex})">行を削除</button>
+                    </div>
+                `;
+                
+                container.appendChild(rowControl);
+            });
+        }
+        
+        // プレビューを更新
+        function updatePreview() {
+            const preview = document.getElementById('preview');
+            const previewArea = document.querySelector('.preview-area');
+            previewArea.style.background = gridData.bgColor;
+            preview.style.maxWidth = gridData.maxWidth + 'px';
+            
+            let html = '';
+            gridData.rows.forEach(row => {
+                html += `<div class="grid-row" style="grid-template-columns: repeat(${row.columns}, 1fr);">`;
+                row.items.forEach(item => {
+                    const rippleClass = item.hasRipple ? 'ripple' : '';
+                    const fontClass = item.fontFamily === 'mincho' ? 'mincho' : 'gothic';
+                    const textClass = item.isHorizontal ? 'horizontal-text' : 'vertical-text';
+
+                    const justifyMap = { top: 'flex-start', center: 'center', bottom: 'flex-end' };
+                    const justify = justifyMap[item.textPosition] || 'center';
+                    const topMap = { top: '15%', center: '50%', bottom: '85%' };
+                    const overlayTop = topMap[item.textPosition] || '50%';
+
+                    const safeText = (item.text ?? '').toString();
+                    const safeImg = (item.imageUrl ?? '').toString();
+                    const overlayStyle = item.overlay ? (' top:' + overlayTop + ';') : '';
+
+                    const textHtml = `<div class="${textClass} ${fontClass}${item.overlay ? ' overlay-text' : ''}" style="color: ${item.color}; font-size: ${item.fontSize}px;${overlayStyle}">${safeText}</div>`;
+
+                    let content = '';
+                    if (item.type === 'image') {
+                        if (item.overlay) {
+                            content = `<div class="overlay-wrap"><img class="grid-image" src="${safeImg}" alt="">${textHtml}</div>`;
+                        } else {
+                            content = `<div class="grid-content" style="justify-content:${justify};"><img class="grid-image" src="${safeImg}" alt=""></div>`;
+                        }
+                    } else if (item.type === 'both') {
+                        if (item.overlay) {
+                            content = `<div class="overlay-wrap"><img class="grid-image" src="${safeImg}" alt="">${textHtml}</div>`;
+                        } else {
+                            content = `<div class="grid-both" style="justify-content:${justify};">${textHtml}<img class="grid-image" src="${safeImg}" alt=""></div>`;
+                        }
+                    } else { // text
+                        content = `<div class="grid-content" style="justify-content:${justify};">${textHtml}</div>`;
+                    }
+
+                    html += `
+                        <div class="grid-item ${rippleClass}" style="aspect-ratio: ${item.aspectRatio}; border: ${item.borderWidth}px solid ${item.borderColor};">
+                            ${item.link ? `<a class="grid-link" href="${item.link}" ${item.newTab !== false ? 'target="_blank" rel="noopener noreferrer"' : ''}>` : ``}
+                                ${content}
+                            ${item.link ? `</a>` : ``}
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            });
+            
+            preview.innerHTML = html;
+        }
+        
+        // アイテムを更新
+        function updateItem(rowIndex, itemIndex, property, value) {
+            gridData.rows[rowIndex].items[itemIndex][property] = value;
+            updatePreview();
+        }
+        
+        // カラム数を更新
+        function updateColumns(rowIndex, columns) {
+            const newColumns = parseInt(columns);
+            const row = gridData.rows[rowIndex];
+            const currentItems = row.items.length;
+            
+            if (newColumns > currentItems) {
+                // アイテムを追加
+                for (let i = currentItems; i < newColumns; i++) {
+                    row.items.push({
+                        type: 'text',
+                        imageUrl: '',
+                        textPosition: 'center',
+                        overlay: false,
+                        text: `テキスト ${i + 1}`,
+                        aspectRatio: '1/1',
+                        hasRipple: true,
+                        color: '#333',
+                        fontSize: 24,
+                        fontFamily: 'gothic',
+                        isHorizontal: false,
+                        borderWidth: 0,
+                        borderColor: '#000000',
+                        link: '',
+                        newTab: true
+                                        });
+                }
+            } else if (newColumns < currentItems) {
+                // アイテムを削除
+                row.items = row.items.slice(0, newColumns);
+            }
+            
+            row.columns = newColumns;
+            renderControls();
+            updatePreview();
+        }
+        
+        // 行を追加
+        function addRow() {
+            gridData.rows.push({
+                id: nextRowId++,
+                columns: 1,
+                items: [
+                    {
+                        type: 'text',
+                        imageUrl: '',
+                        textPosition: 'center',
+                        overlay: false,
+                        text: '新しいテキスト',
+                        aspectRatio: '2/1',
+                        hasRipple: true,
+                        color: '#333',
+                        fontSize: 24,
+                        fontFamily: 'gothic',
+                        isHorizontal: false,
+                        borderWidth: 0,
+                        borderColor: '#000000',
+                        link: '',
+                        newTab: true
+                                        }
+                ]
+            });
+            renderControls();
+            updatePreview();
+        }
+        
+        // 行を削除
+        function deleteRow(rowIndex) {
+            if (confirm('この行を削除しますか?')) {
+                gridData.rows.splice(rowIndex, 1);
+                renderControls();
+                updatePreview();
+            }
+        }
+        
+        // HTMLをエクスポート
+        function exportHTML() {
+            let html = `<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>グリッドレイアウト</title>
     <style>
         * {
@@ -13,11 +811,11 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f5f5;
+            background: ${gridData.bgColor};
         }
         
         .container {
-            max-width: 1200px;
+            max-width: ${gridData.maxWidth}px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -51,6 +849,54 @@
         .grid-link:hover {
             text-decoration: underline;
         }
+
+        .grid-image {
+            max-width: 100%;
+            max-height: 100%;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+            position: relative;
+            z-index: 2;
+        }
+
+        .grid-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .grid-both {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .overlay-wrap {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: stretch;
+            justify-content: stretch;
+        }
+
+        .overlay-text {
+            position: absolute;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 3;
+            pointer-events: none;
+            text-shadow: 0 1px 2px rgba(255,255,255,0.4);
+        }
+
         
         .vertical-text {
             writing-mode: vertical-rl;
@@ -126,19 +972,202 @@
 </head>
 <body>
     <div class="container">
-        <div class="grid-row" style="grid-template-columns: repeat(1, 1fr);">
-            <div class="grid-item ripple" style="aspect-ratio: 2/1; border: 0px solid #000000;">
-                <div class=" vertical-text mincho" style="color: #333; font-size: 17px;">大きなテキスト</div>
-            </div>
-        </div>
-        <div class="grid-row" style="grid-template-columns: repeat(2, 1fr);">
-            <div class="grid-item ripple" style="aspect-ratio: 1/1; border: 0px solid #000000;">
-                <div class=" vertical-text gothic" style="color: #333; font-size: 24px;">左側のテキスト</div>
-            </div>
-            <div class="grid-item ripple" style="aspect-ratio: 1/1; border: 0px solid #000000;">
-                <div class=" vertical-text gothic" style="color: #333; font-size: 24px;">右側のテキスト</div>
-            </div>
-        </div>
-    </div>
+`;
+            
+            gridData.rows.forEach(row => {
+                html += `        <div class="grid-row" style="grid-template-columns: repeat(${row.columns}, 1fr);">\n`;
+                row.items.forEach(item => {
+                    const rippleClass = item.hasRipple ? ' ripple' : '';
+                    const fontClass = item.fontFamily === 'mincho' ? ' mincho' : ' gothic';
+                    const textClass = item.isHorizontal ? ' horizontal-text' : ' vertical-text';
+
+                    const justifyMap = { top: 'flex-start', center: 'center', bottom: 'flex-end' };
+                    const justify = justifyMap[item.textPosition] || 'center';
+                    const topMap = { top: '15%', center: '50%', bottom: '85%' };
+                    const overlayTop = topMap[item.textPosition] || '50%';
+
+                    const safeText = (item.text ?? '').toString();
+                    const safeImg = (item.imageUrl ?? '').toString();
+                    const overlayStyle = item.overlay ? (' top:' + overlayTop + ';') : '';
+
+                    const textHtml = `<div class="${textClass}${fontClass}${item.overlay ? ' overlay-text' : ''}" style="color: ${item.color}; font-size: ${item.fontSize}px;${overlayStyle}">${safeText}</div>`;
+
+                    let content = '';
+                    if (item.type === 'image') {
+                        if (item.overlay) {
+                            content = `<div class="overlay-wrap"><img class="grid-image" src="${safeImg}" alt="">${textHtml}</div>`;
+                        } else {
+                            content = `<div class="grid-content" style="justify-content:${justify};"><img class="grid-image" src="${safeImg}" alt=""></div>`;
+                        }
+                    } else if (item.type === 'both') {
+                        if (item.overlay) {
+                            content = `<div class="overlay-wrap"><img class="grid-image" src="${safeImg}" alt="">${textHtml}</div>`;
+                        } else {
+                            content = `<div class="grid-both" style="justify-content:${justify};">${textHtml}<img class="grid-image" src="${safeImg}" alt=""></div>`;
+                        }
+                    } else {
+                        content = `<div class="grid-content" style="justify-content:${justify};">${textHtml}</div>`;
+                    }
+
+                    html += `            <div class="grid-item${rippleClass}" style="aspect-ratio: ${item.aspectRatio}; border: ${item.borderWidth}px solid ${item.borderColor};">
+`;
+                    if (item.link) {
+                        const safeHref = item.link;
+                        const targetAttrs = (item.newTab !== false) ? ' target="_blank" rel="noopener noreferrer"' : '';
+                        html += `                <a class="grid-link" href="${safeHref}"${targetAttrs}>
+`;
+                    }
+                    html += `                ${content}
+`;
+                    if (item.link) {
+                        html += `                </a>
+`;
+                    }
+                    html += `            </div>
+`;
+});
+                html += `        </div>\n`;
+            });
+            
+            html += `    </div>
+</body>
+</html>`;
+            
+            document.getElementById('export-code').value = html;
+            document.getElementById('export-modal').classList.add('active');
+        }
+        
+        // HTMLをコピー
+        function copyHTML() {
+            const textarea = document.getElementById('export-code');
+            textarea.select();
+            document.execCommand('copy');
+            alert('HTMLをコピーしました!');
+        }
+        
+        // HTMLをダウンロード
+        function downloadHTML() {
+            const html = document.getElementById('export-code').value;
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'grid-layout.html';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        // モーダルを閉じる
+        function closeModal() {
+            document.getElementById('export-modal').classList.remove('active');
+        }
+        
+        // テンプレート読込
+        function loadTemplate() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.html';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        parseHTMLTemplate(event.target.result);
+                    } catch (error) {
+                        alert('HTMLの解析に失敗しました: ' + error.message);
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+        
+        // HTMLテンプレートを解析
+        function parseHTMLTemplate(htmlString) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlString, 'text/html');
+            
+            // 背景色を取得
+            const bgStyle = doc.body.style.background || '#f5f5f5';
+            gridData.bgColor = bgStyle;
+            document.getElementById('bg-color').value = bgStyle;
+            document.getElementById('bg-color-text').value = bgStyle;
+            
+            // コンテナの最大幅を取得
+            const container = doc.querySelector('.container');
+            if (container) {
+                const maxWidth = parseInt(container.style.maxWidth) || 1200;
+                gridData.maxWidth = maxWidth;
+                document.getElementById('max-width').value = maxWidth;
+            }
+            
+            // グリッド行を解析
+            const rows = doc.querySelectorAll('.grid-row');
+            gridData.rows = [];
+            
+            rows.forEach(row => {
+                const items = row.querySelectorAll('.grid-item');
+                const rowData = {
+                    id: nextRowId++,
+                    columns: items.length,
+                    items: []
+                };
+                
+                items.forEach(item => {
+                    const textEl = item.querySelector('.vertical-text, .horizontal-text');
+                    const linkEl = item.querySelector('a.grid-link, a');
+                    const imgEl = item.querySelector('img.grid-image, img');
+                    const overlayWrap = item.querySelector('.overlay-wrap');
+                    const link = linkEl ? (linkEl.getAttribute('href') || '') : '';
+                    const newTab = linkEl ? ((linkEl.getAttribute('target') === '_blank') || (linkEl.getAttribute('rel') || '').includes('noopener')) : true;
+                    
+                    const text = textEl ? textEl.textContent : '';
+                    const aspectRatio = item.style.aspectRatio || '1/1';
+                    const hasRipple = item.classList.contains('ripple');
+                    const color = textEl ? textEl.style.color || '#333' : '#333';
+                    const fontSize = textEl ? parseInt(textEl.style.fontSize) || 24 : 24;
+                    const borderWidth = parseInt(item.style.borderWidth) || 0;
+                    const borderColor = item.style.borderColor || '#000000';
+                    const fontFamily = textEl && textEl.classList.contains('mincho') ? 'mincho' : 'gothic';
+                    const isHorizontal = textEl && textEl.classList.contains('horizontal-text');
+
+                    const imageUrl = imgEl ? (imgEl.getAttribute('src') || '') : '';
+                    const overlay = !!overlayWrap || (textEl && textEl.classList.contains('overlay-text'));
+                    let type = 'text';
+                    if (imageUrl && text) type = 'both';
+                    else if (imageUrl) type = 'image';
+                    const textPosition = 'center';
+
+                    
+                    rowData.items.push({
+                        type,
+                        imageUrl,
+                        textPosition,
+                        overlay,
+                        text,
+                        aspectRatio,
+                        hasRipple,
+                        color,
+                        fontSize,
+                        fontFamily,
+                        isHorizontal,
+                        borderWidth,
+                        borderColor,
+                        link,
+                        newTab
+                    });
+                });
+                
+                gridData.rows.push(rowData);
+            });
+            
+            renderControls();
+            updatePreview();
+            alert('テンプレートを読み込みました!');
+        }
+        
+        // 初期化実行
+        init();
+    </script>
 </body>
 </html>
